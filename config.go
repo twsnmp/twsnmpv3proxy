@@ -24,6 +24,7 @@ type Config struct {
 	V3EngineBoots  uint32 `ini:"v3_engine_boots"`
 	AgentAddress   string `ini:"agent_address"`   // Host:Port, e.g. "127.0.0.1:161"
 	AgentCommunity string `ini:"agent_community"` // v2c community, e.g. "public"
+	ConfigPath     string `ini:"-"`               // Path to the configuration file
 }
 
 // DefaultConfig returns a configuration with default values.
@@ -55,8 +56,35 @@ func LoadConfig(path string) (*Config, error) {
 	if err := cfg.MapTo(config); err != nil {
 		return nil, fmt.Errorf("failed to map INI config: %w", err)
 	}
+	config.ConfigPath = path
 
 	return config, nil
+}
+
+// SaveEngineState updates only v3_engine_id and v3_engine_boots in the configuration file,
+// preserving comments and formatting of all other entries.
+func (c *Config) SaveEngineState() error {
+	if c.ConfigPath == "" {
+		return nil
+	}
+
+	resolvedPath := ResolvePath(c.ConfigPath)
+	cfg, err := ini.Load(resolvedPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			cfg = ini.Empty()
+		} else {
+			return fmt.Errorf("failed to load config for saving: %w", err)
+		}
+	}
+
+	cfg.Section("").Key("v3_engine_id").SetValue(c.V3EngineID)
+	cfg.Section("").Key("v3_engine_boots").SetValue(fmt.Sprintf("%d", c.V3EngineBoots))
+
+	if err := cfg.SaveTo(resolvedPath); err != nil {
+		return fmt.Errorf("failed to save config to %s: %w", resolvedPath, err)
+	}
+	return nil
 }
 
 // ResolvePath converts a relative path to an absolute path relative to the executable's directory.

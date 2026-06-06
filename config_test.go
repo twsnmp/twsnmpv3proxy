@@ -144,3 +144,76 @@ agent_community = private
 		t.Errorf("expected AgentCommunity 'private', got %q", config.AgentCommunity)
 	}
 }
+
+func TestSaveEngineState(t *testing.T) {
+	// Create a temporary config file
+	tempFile, err := os.CreateTemp("", "config_test_save_*.ini")
+	if err != nil {
+		t.Fatalf("failed to create temp file: %v", err)
+	}
+	defer os.Remove(tempFile.Name())
+
+	configContent := `proxy_port = 9999
+v3_user = original_user
+v3_engine_id = 111111111111111111
+v3_engine_boots = 10
+`
+	if _, err := tempFile.Write([]byte(configContent)); err != nil {
+		t.Fatalf("failed to write to temp file: %v", err)
+	}
+	tempFile.Close()
+
+	// Load the config
+	config, err := LoadConfig(tempFile.Name())
+	if err != nil {
+		t.Fatalf("failed to load config: %v", err)
+	}
+
+	// Verify initial state
+	if config.ConfigPath != tempFile.Name() {
+		t.Errorf("expected ConfigPath %q, got %q", tempFile.Name(), config.ConfigPath)
+	}
+	if config.ProxyPort != 9999 {
+		t.Errorf("expected ProxyPort 9999, got %d", config.ProxyPort)
+	}
+	if config.V3User != "original_user" {
+		t.Errorf("expected V3User 'original_user', got %q", config.V3User)
+	}
+	if config.V3EngineID != "111111111111111111" {
+		t.Errorf("expected V3EngineID '111111111111111111', got %q", config.V3EngineID)
+	}
+	if config.V3EngineBoots != 10 {
+		t.Errorf("expected V3EngineBoots 10, got %d", config.V3EngineBoots)
+	}
+
+	// Modify engine state
+	config.V3EngineID = "222222222222222222"
+	config.V3EngineBoots = 11
+
+	// Save engine state
+	if err := config.SaveEngineState(); err != nil {
+		t.Fatalf("failed to save engine state: %v", err)
+	}
+
+	// Reload config to verify persistence
+	reloadedConfig, err := LoadConfig(tempFile.Name())
+	if err != nil {
+		t.Fatalf("failed to reload config: %v", err)
+	}
+
+	// Check that engine parameters are updated
+	if reloadedConfig.V3EngineID != "222222222222222222" {
+		t.Errorf("expected reloaded V3EngineID '222222222222222222', got %q", reloadedConfig.V3EngineID)
+	}
+	if reloadedConfig.V3EngineBoots != 11 {
+		t.Errorf("expected reloaded V3EngineBoots 11, got %d", reloadedConfig.V3EngineBoots)
+	}
+
+	// Check that non-engine parameters are completely untouched
+	if reloadedConfig.ProxyPort != 9999 {
+		t.Errorf("expected reloaded ProxyPort 9999 to remain unchanged, got %d", reloadedConfig.ProxyPort)
+	}
+	if reloadedConfig.V3User != "original_user" {
+		t.Errorf("expected reloaded V3User 'original_user' to remain unchanged, got %q", reloadedConfig.V3User)
+	}
+}

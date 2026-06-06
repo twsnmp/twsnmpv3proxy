@@ -71,6 +71,7 @@ func main() {
 		// If default config not found, use default struct values
 		log.Printf("Config file %s not found. Using default configurations.", *configPath)
 		config = DefaultConfig()
+		config.ConfigPath = *configPath
 	}
 
 	// Track which flags were explicitly set
@@ -129,6 +130,7 @@ func main() {
 		// Step 2: Configure Proxy targeting the mock agent
 		config.ProxyPort = mockProxyPort
 		config.AgentAddress = fmt.Sprintf("127.0.0.1:%d", mockAgentPort)
+		config.ConfigPath = "" // Do not persist configuration changes in integration test mode
 		
 		agentClient, err := NewAgentClient(config, *localIP)
 		if err != nil {

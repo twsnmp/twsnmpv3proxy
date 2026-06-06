@@ -34,6 +34,15 @@ func NewProxyServer(config *Config, agentClient *AgentClient, localIP string) (*
 		log.Printf("[ProxyServer] Auto-generated EngineID: %s", eid)
 	}
 
+	// Increment engine boots
+	config.V3EngineBoots++
+	log.Printf("[ProxyServer] SNMPv3 Engine Boots incremented to: %d", config.V3EngineBoots)
+
+	// Save the updated Engine ID and Boots to configuration
+	if err := config.SaveEngineState(); err != nil {
+		log.Printf("[ProxyServer] Warning: failed to persist engine state: %v", err)
+	}
+
 	return &ProxyServer{
 		config:      config,
 		agentClient: agentClient,
