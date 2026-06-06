@@ -91,24 +91,23 @@ func TestGenerateEngineID(t *testing.T) {
 
 func TestLoadConfig(t *testing.T) {
 	// Create a temporary config file
-	tempFile, err := os.CreateTemp("", "config_test_*.json")
+	tempFile, err := os.CreateTemp("", "config_test_*.ini")
 	if err != nil {
 		t.Fatalf("failed to create temp file: %v", err)
 	}
 	defer os.Remove(tempFile.Name())
 
-	configContent := `{
-		"proxy_port": 1234,
-		"v3_user": "testuser",
-		"v3_auth_pass": "authpass",
-		"v3_priv_pass": "privpass",
-		"v3_auth_proto": "SHA256",
-		"v3_priv_proto": "AES256",
-		"v3_engine_id": "800045c60511223344",
-		"v3_engine_boots": 5,
-		"agent_address": "10.0.0.1:161",
-		"agent_community": "private"
-	}`
+	configContent := `proxy_port = 1234
+v3_user = testuser
+v3_auth_pass = authpass
+v3_priv_pass = privpass
+v3_auth_proto = SHA256
+v3_priv_proto = AES256
+v3_engine_id = 800045c60511223344
+v3_engine_boots = 5
+agent_address = 10.0.0.1:161
+agent_community = private
+`
 
 	if _, err := tempFile.Write([]byte(configContent)); err != nil {
 		t.Fatalf("failed to write to temp file: %v", err)

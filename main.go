@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	defaultConfigPath = "config.json"
+	defaultConfigPath = "config.ini"
 	mockAgentPort     = 1162
 	mockProxyPort     = 1161
 	testOID           = ".1.3.6.1.2.1.1.1.0" // sysDescr
@@ -28,9 +28,9 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	// Define command-line flags
-	configPath := flag.String("config", defaultConfigPath, "Path to JSON configuration file")
+	configPath := flag.String("config", defaultConfigPath, "Path to INI configuration file")
 	proxyPort := flag.Int("port", 0, "SNMPv3 proxy listen port (overrides config)")
-	agentAddress := flag.String("agent", "", "Target SNMPv2c agent address (overrides config, e.g. 127.0.0.1:161)")
+	agentAddress := flag.String("agent", "127.0.0.1:161", "Target SNMPv2c agent address (overrides config)")
 	agentCommunity := flag.String("community", "", "SNMPv2c community name (overrides config)")
 	v3User := flag.String("user", "", "SNMPv3 USM username (overrides config)")
 	v3AuthPass := flag.String("auth-pass", "", "SNMPv3 authentication passphrase (overrides config)")
@@ -40,6 +40,7 @@ func main() {
 	v3EngineID := flag.String("engine-id", "", "SNMPv3 EngineID hex string (overrides config)")
 	localIP := flag.String("local-ip", "", "Local IP address to bind for outgoing requests")
 	startMock := flag.Bool("mock", false, "Start a mock SNMPv2c agent on port 1162 alongside the proxy")
+	runTest := flag.Bool("test", false, "Start in self-contained integration test mode")
 	serviceCmd := flag.String("service", "", "Windows service command: install, uninstall, start, stop")
 	flag.Parse()
 
@@ -72,11 +73,17 @@ func main() {
 		config = DefaultConfig()
 	}
 
+	// Track which flags were explicitly set
+	setFlags := make(map[string]bool)
+	flag.Visit(func(f *flag.Flag) {
+		setFlags[f.Name] = true
+	})
+
 	// 4. Override configuration with CLI flags
 	if *proxyPort != 0 {
 		config.ProxyPort = *proxyPort
 	}
-	if *agentAddress != "" {
+	if setFlags["agent"] {
 		config.AgentAddress = *agentAddress
 	}
 	if *agentCommunity != "" {
@@ -107,11 +114,9 @@ func main() {
 	
 	var wg sync.WaitGroup
 
-	// 5. Run in Integration Test Mode if no target agent is specified (either by CLI or config file)
-	// (Check if AgentAddress is empty or default config was loaded but agent target is empty)
-	cleanAgentAddr := strings.TrimSpace(config.AgentAddress)
-	if cleanAgentAddr == "" || (loadErr != nil && *agentAddress == "") {
-		log.Println("[Main] No target agent specified. Starting self-contained integration test...")
+	// 5. Run in Integration Test Mode if -test flag is specified
+	if *runTest {
+		log.Println("[Main] Starting self-contained integration test...")
 
 		// Step 1: Start Mock SNMPv2c Agent on port 1162
 		wg.Add(1)

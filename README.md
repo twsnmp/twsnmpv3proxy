@@ -18,12 +18,12 @@ SNMPv3マネージャーからの暗号化・認証されたリクエストを�
 
 ## クイックスタート (統合テストモード)
 
-引数や設定ファイルを指定せずに実行すると、**自己完結型の統合テストモード**で起動します。
+`-test` 引数を指定して実行すると、**自己完結型の統合テストモード**で起動します。
 127.0.0.1のポート1162で動作するモックのSNMPv2cエージェントと、ポート1161で動作するSNMPv3プロキシをローカルで同時に立ち上げ、自動的にテストクエリを実行し結果を検証します。
 
 ```bash
 # 統合テストの実行
-go run .
+go run . -test
 ```
 
 ---
@@ -36,9 +36,9 @@ twsnmpv3proxy [options]
 
 | オプション | デフォルト値 | 説明 |
 | :--- | :--- | :--- |
-| `-config` | `config.json` | 設定ファイルのパス。相対パスの場合、実行ファイルと同じディレクトリから解決されます。 |
-| `-port` | （設定値を優先） | SNMPv3 プロキシ受付ポート（UDP）。（例: `161`） |
-| `-agent` | （設定値を優先） | 転送先となるSNMPv2cエージェントのIPアドレスとポート。（例: `127.0.0.1:161`） |
+| `-config` | `config.ini` | 設定ファイルのパス。相対パスの場合、実行ファイルと同じディレクトリから解決されます。 |
+| `-port` | （設定値を優先） | SNMPv3 プロキシ受付ポート（UDP）。（例: `1161`） |
+| `-agent` | `127.0.0.1:161` | 転送先となるSNMPv2cエージェントのIPアドレスとポート。 |
 | `-community` | （設定値を優先） | 転送先SNMPv2cエージェントのコミュニティ名。（例: `public`） |
 | `-user` | （設定値を優先） | SNMPv3 USMのユーザー名。 |
 | `-auth-pass` | （設定値を優先） | SNMPv3 認証パスワード（AuthPassphrase）。 |
@@ -48,29 +48,28 @@ twsnmpv3proxy [options]
 | `-engine-id` | （設定値を優先） | SNMPv3 の EngineID（Hex文字列）。指定がない場合は自動生成します。 |
 | `-local-ip` | （空） | プロキシからエージェントへリクエストを送信する際にバインドするローカルIPアドレス。 |
 | `-mock` | `false` | プロキシ起動と同時に、ポート1162でモックのSNMPv2cエージェントをバックグラウンド起動する（テスト用）。 |
+| `-test` | `false` | 自己完結型の統合テストモードで起動する。 |
 | `-service` | （空） | Windowsサービス管理コマンド（`install`, `uninstall`, `start`, `stop`）。 |
 
-※ **優先順位**: コマンドライン引数 ＞ 設定ファイル（`config.json`） ＞ デフォルト値
+※ **優先順位**: コマンドライン引数 ＞ 設定ファイル（`config.ini`） ＞ デフォルト値
 
 ---
 
-## 設定ファイル (`config.json`)
+## 設定ファイル (`config.ini`)
 
-設定ファイルのサンプル（`config.json.sample`）をベースに `config.json` を作成してください。
+設定ファイルのサンプル（`config.ini.sample`）をベースに `config.ini` を作成してください。
 
-```json
-{
-  "proxy_port": 161,
-  "v3_user": "proxyuser",
-  "v3_auth_pass": "authpassword",
-  "v3_priv_pass": "privpassword",
-  "v3_auth_proto": "SHA",
-  "v3_priv_proto": "AES",
-  "v3_engine_id": "",
-  "v3_engine_boots": 1,
-  "agent_address": "127.0.0.1:161",
-  "agent_community": "public"
-}
+```ini
+proxy_port = 1161
+v3_user = proxyuser
+v3_auth_pass = authpassword
+v3_priv_pass = privpassword
+v3_auth_proto = SHA
+v3_priv_proto = AES
+v3_engine_id = 
+v3_engine_boots = 1
+agent_address = 127.0.0.1:161
+agent_community = public
 ```
 
 ---
@@ -81,7 +80,7 @@ Windowsの管理者権限を持つコマンドプロンプトまたはPowerShell
 
 ### 1. サービスの登録 (インストール)
 ```cmd
-twsnmpv3proxy.exe -service install -config C:\\path\\to\\config.json
+twsnmpv3proxy.exe -service install -config C:\\path\\to\\config.ini
 ```
 ※ サービス起動時の作業ディレクトリ問題を防ぐため、`-config` には絶対パスを指定することを強く推奨します。
 
@@ -110,6 +109,9 @@ twsnmpv3proxy.exe -service uninstall
 # ローカルビルド
 mise run build
 
+# Windows向けバイナリ (exe) のビルド
+mise run build_windows
+
 # 単体テストの実行
 mise run test
 
@@ -117,7 +119,7 @@ mise run test
 mise run integration
 
 # Windows向けリリースパッケージ (ZIP) のビルド
-GOOS=windows GOARCH=amd64 mise run package
+mise run package
 ```
 
 ---

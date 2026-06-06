@@ -59,7 +59,7 @@ jobs:
             # Copy release files
             cp README.md "$build_dir/"
             cp LICENSE "$build_dir/"
-            cp config.json.sample "$build_dir/"
+            cp config.ini.sample "$build_dir/"
             
             # Zip package
             zip -r "dist/twsnmpv3proxy-${goos}-${goarch}.zip" "$build_dir"

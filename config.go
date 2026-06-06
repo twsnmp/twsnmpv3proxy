@@ -3,33 +3,33 @@ package main
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/gosnmp/gosnmp"
+	"gopkg.in/ini.v1"
 )
 
 // Config holds all the parameters needed to run the SNMPv3-to-v2c proxy.
 type Config struct {
-	ProxyPort      int    `json:"proxy_port"`
-	V3User         string `json:"v3_user"`
-	V3AuthPass     string `json:"v3_auth_pass"`
-	V3PrivPass     string `json:"v3_priv_pass"`
-	V3AuthProto    string `json:"v3_auth_proto"` // MD5, SHA, SHA224, SHA256, SHA384, SHA512, NoAuth
-	V3PrivProto    string `json:"v3_priv_proto"` // DES, AES, AES192, AES256, AES192C, AES256C, NoPriv
-	V3EngineID     string `json:"v3_engine_id"`  // Hex string, optional
-	V3EngineBoots  uint32 `json:"v3_engine_boots"`
-	AgentAddress   string `json:"agent_address"`   // Host:Port, e.g. "127.0.0.1:161"
-	AgentCommunity string `json:"agent_community"` // v2c community, e.g. "public"
+	ProxyPort      int    `ini:"proxy_port"`
+	V3User         string `ini:"v3_user"`
+	V3AuthPass     string `ini:"v3_auth_pass"`
+	V3PrivPass     string `ini:"v3_priv_pass"`
+	V3AuthProto    string `ini:"v3_auth_proto"` // MD5, SHA, SHA224, SHA256, SHA384, SHA512, NoAuth
+	V3PrivProto    string `ini:"v3_priv_proto"` // DES, AES, AES192, AES256, AES192C, AES256C, NoPriv
+	V3EngineID     string `ini:"v3_engine_id"`  // Hex string, optional
+	V3EngineBoots  uint32 `ini:"v3_engine_boots"`
+	AgentAddress   string `ini:"agent_address"`   // Host:Port, e.g. "127.0.0.1:161"
+	AgentCommunity string `ini:"agent_community"` // v2c community, e.g. "public"
 }
 
 // DefaultConfig returns a configuration with default values.
 func DefaultConfig() *Config {
 	return &Config{
-		ProxyPort:      161,
+		ProxyPort:      1161,
 		V3User:         "proxyuser",
 		V3AuthPass:     "authpassword",
 		V3PrivPass:     "privpassword",
@@ -42,20 +42,18 @@ func DefaultConfig() *Config {
 	}
 }
 
-// LoadConfig reads a JSON configuration file and returns a Config struct.
+// LoadConfig reads an INI configuration file and returns a Config struct.
 func LoadConfig(path string) (*Config, error) {
 	resolvedPath := ResolvePath(path)
 	
-	file, err := os.Open(resolvedPath)
+	cfg, err := ini.Load(resolvedPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open config file %s (resolved: %s): %w", path, resolvedPath, err)
+		return nil, fmt.Errorf("failed to read config file %s (resolved: %s): %w", path, resolvedPath, err)
 	}
-	defer file.Close()
 
 	config := DefaultConfig()
-	decoder := json.NewDecoder(file)
-	if err := decoder.Decode(config); err != nil {
-		return nil, fmt.Errorf("failed to decode JSON config: %w", err)
+	if err := cfg.MapTo(config); err != nil {
+		return nil, fmt.Errorf("failed to map INI config: %w", err)
 	}
 
 	return config, nil
