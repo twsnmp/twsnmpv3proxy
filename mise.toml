@@ -1,0 +1,39 @@
+# mise configuration file for twsnmpv3proxy
+
+[tools]
+go = "1.26.2"
+
+[tasks.build]
+description = "Build the proxy binary for local OS"
+run = "go build -o twsnmpv3proxy"
+
+[tasks.test]
+description = "Run unit tests"
+run = "go test -v ./..."
+
+[tasks.integration]
+description = "Build and run the self-contained integration test"
+depends = ["build"]
+run = "./twsnmpv3proxy"
+
+[tasks.package]
+description = "Compile and package the release files into a ZIP archive"
+run = """
+mkdir -p dist/twsnmpv3proxy
+# Check which OS we are packaging for, default to local build
+GOOS=${GOOS:-$(go env GOOS)}
+GOARCH=${GOARCH:-$(go env GOARCH)}
+SUFFIX=""
+if [ "$GOOS" = "windows" ]; then
+  SUFFIX=".exe"
+fi
+echo "Building for $GOOS/$GOARCH..."
+GOOS=$GOOS GOARCH=$GOARCH go build -o dist/twsnmpv3proxy/twsnmpv3proxy$SUFFIX
+cp README.md dist/twsnmpv3proxy/
+cp LICENSE dist/twsnmpv3proxy/
+cp config.json.sample dist/twsnmpv3proxy/
+cd dist
+zip -r twsnmpv3proxy-$GOOS-$GOARCH.zip twsnmpv3proxy
+rm -rf twsnmpv3proxy
+echo "Release package created: dist/twsnmpv3proxy-$GOOS-$GOARCH.zip"
+"""

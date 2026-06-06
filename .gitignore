@@ -30,3 +30,9 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# Local binaries and build distributions
+twsnmpv3proxy
+dist/
+release/
+

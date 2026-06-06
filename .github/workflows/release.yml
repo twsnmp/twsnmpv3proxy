@@ -1,0 +1,77 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.2'
+          cache: true
+
+      - name: Build and Package Binaries
+        run: |
+          mkdir -p dist
+          
+          # Define targets to build
+          # Format: "GOOS/GOARCH"
+          TARGETS=(
+            "windows/amd64"
+            "windows/386"
+            "linux/amd64"
+            "linux/386"
+            "linux/arm64"
+            "darwin/amd64"
+            "darwin/arm64"
+          )
+          
+          for target in "${TARGETS[@]}"; do
+            IFS="/" read -r -a arr <<< "$target"
+            goos="${arr[0]}"
+            goarch="${arr[1]}"
+            suffix=""
+            if [ "$goos" = "windows" ]; then
+              suffix=".exe"
+            fi
+            
+            echo "Building for $goos/$goarch..."
+            
+            # Temporary build directory
+            build_dir="twsnmpv3proxy-${goos}-${goarch}"
+            mkdir -p "$build_dir"
+            
+            # Compile
+            GOOS="$goos" GOARCH="$goarch" go build -ldflags="-s -w" -o "${build_dir}/twsnmpv3proxy${suffix}"
+            
+            # Copy release files
+            cp README.md "$build_dir/"
+            cp LICENSE "$build_dir/"
+            cp config.json.sample "$build_dir/"
+            
+            # Zip package
+            zip -r "dist/twsnmpv3proxy-${goos}-${goarch}.zip" "$build_dir"
+            
+            # Clean up temp build dir
+            rm -rf "$build_dir"
+          done
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
