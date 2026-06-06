@@ -4,6 +4,8 @@
 
 Windows標準のSNMPエージェント（または既存のSNMPv2cエージェント）をSNMPv3（セキュアな通信）に対応させるためのプロキシサーバーです。
 
+![twsnmpv3proxy Infographic](images/twsnmpv3proxy_infographic.png)
+
 SNMPv3マネージャーからの暗号化・認証されたリクエストを受信・解読し、対応するSNMPv2cリクエストに変換して背後のエージェントに中継します。
 
 ## 主な機能

@@ -4,6 +4,8 @@ English | [日本語](README_ja.md)
 
 A proxy server designed to bridge standard Windows SNMP agents (or any existing SNMPv2c agents) to support secure SNMPv3 communications.
 
+![twsnmpv3proxy Infographic](images/twsnmpv3proxy_infographic.png)
+
 It receives and decrypts/authenticates SNMPv3 requests from SNMPv3 managers, translates them to corresponding SNMPv2c requests, and forwards them to the underlying SNMPv2c agents.
 
 ## Features
