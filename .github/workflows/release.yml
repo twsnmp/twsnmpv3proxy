@@ -4,6 +4,18 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name for the release (if empty, release creation is skipped and artifacts are uploaded to the workflow run)'
+        required: false
+        type: string
+        default: ''
+      draft:
+        description: 'Create as a draft release (only applies if tag_name is provided)'
+        required: true
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -69,9 +81,20 @@ jobs:
           done
 
       - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.tag_name != '')
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*.zip
           generate_release_notes: true
+          tag_name: ${{ inputs.tag_name || '' }}
+          draft: ${{ github.event_name == 'workflow_dispatch' && inputs.draft }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Artifacts
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: twsnmpv3proxy-binaries
+          path: dist/*.zip
+          retention-days: 5
