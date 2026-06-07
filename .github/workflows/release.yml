@@ -38,6 +38,20 @@ jobs:
         run: |
           mkdir -p dist
           
+          # Determine version
+          if [ -n "${{ inputs.tag_name }}" ]; then
+            VERSION="${{ inputs.tag_name }}"
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION="${{ github.ref_name }}"
+          else
+            VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          fi
+          
+          # Determine commit
+          COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+          
+          echo "Building version $VERSION (commit $COMMIT)..."
+          
           # Define targets to build
           # Format: "GOOS/GOARCH"
           TARGETS=(
@@ -65,7 +79,7 @@ jobs:
             mkdir -p "$build_dir"
             
             # Compile
-            GOOS="$goos" GOARCH="$goarch" go build -ldflags="-s -w" -o "${build_dir}/twsnmpv3proxy${suffix}"
+            GOOS="$goos" GOARCH="$goarch" go build -ldflags="-s -w -X main.version=${VERSION} -X main.commit=${COMMIT}" -o "${build_dir}/twsnmpv3proxy${suffix}"
             
             # Copy release files
             cp README.md "$build_dir/"

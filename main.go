@@ -24,10 +24,16 @@ const (
 	mockSysDescr      = "Mock SNMPv2c Agent System Description"
 )
 
+var (
+	version = "v0.0.0"
+	commit  = "unknown"
+)
+
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	// Define command-line flags
+	versionFlag := flag.Bool("v", false, "Show version and exit")
 	configPath := flag.String("config", defaultConfigPath, "Path to INI configuration file")
 	proxyPort := flag.Int("port", 0, "SNMPv3 proxy listen port (overrides config)")
 	agentAddress := flag.String("agent", "127.0.0.1:161", "Target SNMPv2c agent address (overrides config)")
@@ -43,6 +49,11 @@ func main() {
 	runTest := flag.Bool("test", false, "Start in self-contained integration test mode")
 	serviceCmd := flag.String("service", "", "Windows service command: install, uninstall, start, stop")
 	flag.Parse()
+
+	if *versionFlag {
+		fmt.Printf("twsnmpv3proxy version: %s (commit: %s)\n", version, commit)
+		return
+	}
 
 	// 1. Check if running under SCM (Windows Service manager)
 	if isWindowsService() {

@@ -5,7 +5,11 @@ go = "1.26.2"
 
 [tasks.build]
 description = "Build the proxy binary for local OS"
-run = "go build -o dist/twsnmpv3proxy"
+run = """
+VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+go build -ldflags "-X main.version=$VERSION -X main.commit=$COMMIT" -o dist/twsnmpv3proxy
+"""
 
 [tasks.test]
 description = "Run unit tests"
@@ -18,7 +22,11 @@ run = "./dist/twsnmpv3proxy -test"
 
 [tasks.build_windows]
 description = "Build the proxy binary for Windows (AMD64)"
-run = "GOOS=windows GOARCH=amd64 go build -o dist/twsnmpv3proxy.exe"
+run = """
+VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+GOOS=windows GOARCH=amd64 go build -ldflags "-X main.version=$VERSION -X main.commit=$COMMIT" -o dist/twsnmpv3proxy.exe
+"""
 
 [tasks.package]
 description = "Compile and package the Windows (AMD64) release files into a ZIP archive"
@@ -27,7 +35,9 @@ mkdir -p dist/build_pkg/twsnmpv3proxy
 GOOS=windows
 GOARCH=amd64
 echo "Building and packaging for $GOOS/$GOARCH..."
-GOOS=$GOOS GOARCH=$GOARCH go build -o dist/build_pkg/twsnmpv3proxy/twsnmpv3proxy.exe
+VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+GOOS=$GOOS GOARCH=$GOARCH go build -ldflags "-X main.version=$VERSION -X main.commit=$COMMIT" -o dist/build_pkg/twsnmpv3proxy/twsnmpv3proxy.exe
 cp README.md dist/build_pkg/twsnmpv3proxy/
 cp LICENSE dist/build_pkg/twsnmpv3proxy/
 cp config.ini.sample dist/build_pkg/twsnmpv3proxy/
